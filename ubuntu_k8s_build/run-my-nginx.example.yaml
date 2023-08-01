@@ -1,0 +1,49 @@
+# 部署两个nginx
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: my-nginx-container # 对应 spec.template.metadata.labels
+  replicas: 2 # pod数量
+  template: # pod 模版信息
+    metadata:
+      labels:
+        app: my-nginx-container # pod标签信息，打这个label给 deployment 和 service 的 spec.selector 选择
+    spec:
+      containers:
+        - name: my-nginx
+          image: nginx:alpine-slim
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: www
+              mountPath: /usr/share/nginx/html/www # nginx 默认路径 /usr/share/nginx/html
+      volumes:
+        - name: www
+          hostPath:
+            # 宿主（node）上目录位置（不是自己电脑的位置），这里要使用绝对路径，试了下相对路径
+            path: /multipass/share/www
+            #type: Directory
+
+---
+
+# 暴露服务,服务 labels 为 app:my-nginx 的 pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-nginx-service
+spec:
+  type: NodePort
+  # type: LoadBalancer # 需要云厂商支持
+  selector:
+    # 选择服务的pod
+    app: my-nginx-container # 对应 kind: Deployment 中 spec.template.metadata.labels
+  ports:
+    - name: http
+      port: 8082 # service 端口,  kubectl port-forward service/my-nginx-service 7081:8082,本机就可以通过 127.0.0.1:7081 访问service 了
+      targetPort: 80 # 容器端口
+      nodePort: 30080 # 节点端口
+      protocol: TCP
