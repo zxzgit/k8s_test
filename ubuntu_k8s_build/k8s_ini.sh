@@ -53,7 +53,7 @@ rm -rf /etc/containerd && mkdir /etc/containerd && containerd config default > /
 
 # -  修改 containerd 的 config.toml 中 SystemdCgroup = true, 修改 sandbox_image = "registry.aliyuncs.com/google_containers/pause:3.9, 不修改 containerd 无法正常使用k8s启动不了
 sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-sed -i 's/"registry.k8s.io\/pause:3.6"/"registry.aliyuncs.com\/google_containers\/pause:3.9"/' /etc/containerd/config.toml
+sed -i 's/"registry.k8s.io\/pause:/"registry.aliyuncs.com\/google_containers\/pause:/' /etc/containerd/config.toml
 
 doLog "containerd 重启"
 systemctl restart containerd
@@ -69,10 +69,6 @@ apt-get install -y kubelet kubeadm kubectl
 # 设置开机启动 kubectl
 doLog "启动 kubectl"
 systemctl enable --now kubelet
-
-# todo 拉取kubeadm需要的镜像, 是不是可以去掉
-doLog "预先拉取kubeadm需要的镜像"
-kubeadm config images pull --image-repository=registry.aliyuncs.com/google_containers
 
 doLog "设置 kubernetes.conf 的net"
 tee /etc/sysctl.d/kubernetes.conf <<EOF

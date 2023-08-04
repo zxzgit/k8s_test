@@ -21,6 +21,10 @@ kubeadm reset
 #ctr images pull registry.aliyuncs.com/google_containers/pause:3.9
 #ctrctr -n k8s.io i tag registry.aliyuncs.com/google_containers/pause:3.9 registry.k8s.io/pause:3.6
 
+# 事先拉取kubeadm需要的镜像, 可以去掉, 有网络 init 的时候会自己拉， 配合 --image-repository  拉取指定仓库，google源国内无法访问
+#doLog "预先拉取kubeadm需要的镜像"
+#kubeadm config images pull --image-repository=registry.aliyuncs.com/google_containers
+
 # 初始化集群节点, kubernetes-version 为 kubeadm version 中的 GitVersion, apiserver-advertise-address 如果不填写默认是本机
 # 如果安装失败 kubeadm reset 进行重置,https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/
 doLog "创建集群"
