@@ -36,7 +36,7 @@ spec:
       volumes:
         - name: www
           hostPath:
-            # 宿主（node）上目录位置（不是自己电脑的位置），这里要使用绝对路径，不能使用相对路径
+            # 宿主（node）上目录位置（不是自己电脑的位置），这里要使用绝对路径，不能使用相对路径,注意在每个node都要有对应的路径文件，不然无法挂载，因为pod在不同子节点都要通过该配置挂载对应目录
             path: /multipass/share/ubuntu_k8s_build/nginx_with_php_in_same_pod/nginx/www
             #type: Directory
         - name: nginx-config
