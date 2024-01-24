@@ -1,0 +1,96 @@
+# nginx和php部署在同一个pod里面
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nwp-nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nwp-nginx-container # 对应 spec.template.metadata.labels
+  replicas: 2 # pod数量
+  template: # pod 模版信息
+    metadata:
+      labels:
+        app: nwp-nginx-container # pod标签信息，打这个label给 deployment 和 service 的 spec.selector 选择
+    spec:
+      containers:
+        - name: nwp-nginx
+          image: nginx:alpine-slim
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          volumeMounts:
+            - name: www
+              mountPath: /usr/share/nginx/html/www # nginx 默认路径 /usr/share/nginx/html
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+            - name: nginx-config-conf
+              mountPath: /etc/nginx/conf.d
+        - name: nwp-php-1
+          image: php:7.3-fpm-alpine
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - name: www
+              mountPath: /usr/share/nginx/html/www # nginx 默认路径 /usr/share/nginx/html
+      volumes:
+        - name: www
+          hostPath:
+            # 宿主（node）上目录位置（不是自己电脑的位置），这里要使用绝对路径，不能使用相对路径
+            path: /multipass/share/ubuntu_k8s_build/nginx_with_php_in_same_pod/nginx/www
+            #type: Directory
+        - name: nginx-config
+          hostPath:
+            path: /multipass/share/ubuntu_k8s_build/nginx_with_php_in_same_pod/nginx/etc/nginx.conf
+            type: File
+        - name: nginx-config-conf
+          hostPath:
+            path: /multipass/share/ubuntu_k8s_build/nginx_with_php_in_same_pod/nginx/etc/conf.d
+            type: Directory
+
+---
+
+# 暴露服务,服务 labels 为 app:nwp-nginx 的 pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: nwp-nginx-service-http
+spec:
+  type: NodePort
+  # type: LoadBalancer # 需要云厂商支持
+  selector:
+    # 选择服务的pod
+    app: nwp-nginx-container # 对应 kind: Deployment 中 spec.template.metadata.labels
+  ports:
+    - name: http
+      port: 8082 # service 端口,  kubectl port-forward service/nwp-nginx-service 7081:8082,本机就可以通过 127.0.0.1:7081 访问service 了
+      targetPort: 80 # 容器端口
+      nodePort: 30080 # 节点端口
+      protocol: TCP
+    - name: http-ssl
+      port: 8083 # service 端口,  kubectl port-forward service/nwp-nginx-service 7081:8082,本机就可以通过 127.0.0.1:7081 访问service 了
+      targetPort: 443 # 容器端口
+      nodePort: 30083 # 节点端口
+      protocol: TCP
+---
+
+## 暴露服务,服务 labels 为 app:nwp-nginx 的 pod
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: nwp-nginx-service-https
+#spec:
+#  type: NodePort
+#  # type: LoadBalancer # 需要云厂商支持
+#  selector:
+#    # 选择服务的pod
+#    app: nwp-nginx-container # 对应 kind: Deployment 中 spec.template.metadata.labels
+#  ports:
+#    - name: http-ssl
+#      port: 8083 # service 端口,  kubectl port-forward service/nwp-nginx-service 7081:8082,本机就可以通过 127.0.0.1:7081 访问service 了
+#      targetPort: 443 # 容器端口
+#      nodePort: 30083 # 节点端口
+#      protocol: TCP
+
+---
+
